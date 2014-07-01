@@ -208,9 +208,10 @@ module Middleman::Cli
       end
 
       # Loop over all the paths and build them.
-      resources.reject do |resource|
+      require 'parallel'
+      ::Parallel.each(resources.reject do |resource|
         resource.ext == '.css'
-      end.each(&method(:build_resource))
+      end){|resource| build_resource(resource) }
 
       ::Middleman::Profiling.report('build')
     end
@@ -220,15 +221,15 @@ module Middleman::Cli
 
       output_path = render_to_file(resource)
 
-      if should_clean? && output_path.exist?
-        if RUBY_PLATFORM =~ /darwin/
+      #if should_clean? && output_path.exist?
+      #  if RUBY_PLATFORM =~ /darwin/
           # handle UTF-8-MAC filename on MacOS
 
-          @to_clean.delete(output_path.realpath.to_s.encode('UTF-8', 'UTF-8-MAC'))
-        else
-          @to_clean.delete(output_path.realpath)
-        end
-      end
+      #    @to_clean.delete(output_path.realpath.to_s.encode('UTF-8', 'UTF-8-MAC'))
+      #  else
+      #    @to_clean.delete(output_path.realpath)
+      #  end
+      #end
     end
 
     # Render a resource to a file.
