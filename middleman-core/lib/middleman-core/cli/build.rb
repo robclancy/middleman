@@ -43,6 +43,8 @@ module Middleman::Cli
     # Core build Thor command
     # @return [void]
     def build
+      @start_time = Time.now
+      
       unless ENV['MM_ROOT']
         raise Thor::Error, 'Error: Could not find a Middleman project config, perhaps you are in the wrong folder?'
       end
@@ -78,6 +80,8 @@ module Middleman::Cli
         end
         shell.say msg, :red
       end
+
+      shell.say "Build complete. Took #{(Time.now - @start_time).round(2)}s", :blue
 
       exit(1) if had_errors
     end
