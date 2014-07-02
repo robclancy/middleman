@@ -42,7 +42,8 @@ module Middleman
 
           # After config, load everything else
           app.ready do
-            files.reload_path('.')
+            files.reload_path(config[:source])
+            files.reload_path(config[:build_dir])
           end
         end
         alias_method :included, :registered
