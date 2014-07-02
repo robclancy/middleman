@@ -164,6 +164,11 @@ module Middleman
             content = render_individual_file(layout_path, locs, opts, context) { content }
           end
 
+          # temp hack to fix bug with content_for and slim
+          if pos = content.index('<!DOCTYPE html>')
+            content = content[pos..-1]
+          end
+
           # Return result
           content
         ensure
