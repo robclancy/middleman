@@ -212,7 +212,12 @@ module Middleman
           @app.logger.debug '== Rebuilding resource list'
 
           @resources = @resource_list_manipulators.reduce([]) do |result, (_, inst)|
+            @app.logger.debug ' - running '+inst.class.name+' manipulator'
             newres = inst.manipulate_resource_list(result)
+            
+            unless newres
+              @app.logger.debug '   failed to get new resources from manipulator'
+            end
 
             # Reset lookup cache
             reset_lookup_cache!
