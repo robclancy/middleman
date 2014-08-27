@@ -1,6 +1,22 @@
 master
 ===
 
+3.3.5
+===
+
+* Update Padrino to ~> 0.12.3 (removed breadcrumb helper)
+* Update compass-import-once to 1.0.5
+* Fix issue with Slim partials. #1327
+
+3.3.4
+===
+
+* Fix `automatic_alt_tags` error. #1341
+* `partial` now looks for i18n suffixed filenames. #1333
+* Allow excluding paths from `gzip`. #1268
+* Let LiveReload work on 404 pages.
+* Update `listen` dependency.
+
 3.3.3
 ===
 

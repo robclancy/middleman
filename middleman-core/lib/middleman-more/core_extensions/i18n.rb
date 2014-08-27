@@ -91,10 +91,10 @@ class Middleman::CoreExtensions::Internationalization < ::Middleman::Extension
   private
 
   def on_file_changed(file)
-    if @locales_regex =~ file
-      @_langs = nil # Clear langs cache
-      ::I18n.reload!
-    end
+    return unless @locales_regex =~ file
+
+    @_langs = nil # Clear langs cache
+    ::I18n.reload!
   end
 
   def convert_glob_to_regex(glob)
@@ -108,10 +108,9 @@ class Middleman::CoreExtensions::Internationalization < ::Middleman::Extension
     ::I18n.reload!
 
     ::I18n.default_locale = @mount_at_root
+
     # Reset fallbacks to fall back to our new default
-    if ::I18n.respond_to? :fallbacks
-      ::I18n.fallbacks = ::I18n::Locale::Fallbacks.new
-    end
+    ::I18n.fallbacks = ::I18n::Locale::Fallbacks.new if ::I18n.respond_to?(:fallbacks)
   end
 
   def metadata_for_path(url)
@@ -207,6 +206,33 @@ class Middleman::CoreExtensions::Internationalization < ::Middleman::Extension
     # @return [Array<Symbol>]
     def langs
       extensions[:i18n].langs
+    end
+
+    def locate_partial(partial_name, try_static=false)
+      locals_dir = extensions[:i18n].options[:templates_dir]
+
+      # Try /localizable
+      partials_path = File.join(locals_dir, partial_name)
+
+      lang_suffix = current_resource.metadata[:locals] && current_resource.metadata[:locals][:lang]
+
+      extname = File.extname(partial_name)
+      maybe_static = extname.length > 0
+      suffixed_partial_name = if maybe_static
+        partial_name.sub(extname, ".#{lang_suffix}#{extname}")
+      else
+        "#{partial_name}.#{lang_suffix}"
+      end
+
+      if lang_suffix
+        super(suffixed_partial_name, maybe_static) ||
+        super(File.join(locals_dir, suffixed_partial_name), maybe_static) ||
+        super(partials_path, try_static) ||
+        super
+      else
+        super(partials_path, try_static) ||
+        super
+      end
     end
   end
 end

@@ -23,26 +23,25 @@ module Middleman
         logger.info "== Inspect your site configuration at http://#{host}:#{port}/__middleman/"
 
         @initialized ||= false
-        unless @initialized
-          @initialized = true
+        return if @initialized
+        @initialized = true
 
-          register_signal_handlers
+        register_signal_handlers
 
-          # Save the last-used @options so it may be re-used when
-          # reloading later on.
-          ::Middleman::Profiling.report('server_start')
+        # Save the last-used @options so it may be re-used when
+        # reloading later on.
+        ::Middleman::Profiling.report('server_start')
 
-          loop do
-            @webrick.start
+        loop do
+          @webrick.start
 
-            # $mm_shutdown is set by the signal handler
-            if $mm_shutdown
-              shutdown
-              exit
-            elsif $mm_reload
-              $mm_reload = false
-              reload
-            end
+          # $mm_shutdown is set by the signal handler
+          if $mm_shutdown
+            shutdown
+            exit
+          elsif $mm_reload
+            $mm_reload = false
+            reload
           end
         end
       end
@@ -107,25 +106,20 @@ module Middleman
             opts[:instrumenting] || false
           )
 
-          if opts[:environment]
-            config[:environment] = opts[:environment].to_sym
-          end
+          config[:environment] = opts[:environment].to_sym if opts[:environment]
         end
       end
 
       def start_file_watcher
-        return if @options[:disable_watcher]
+        return if @listener || @options[:disable_watcher]
 
-        first_run = !@listener
+        # Watcher Library
+        require 'listen'
 
-        if first_run
-          # Watcher Library
-          require 'listen'
-          @listener = Listen.to(Dir.pwd, relative_paths: true, force_polling: @options[:force_polling])
-          @listener.latency(@options[:latency])
-        end
+        options = { force_polling: @options[:force_polling] }
+        options[:latency] = @options[:latency] if @options[:latency]
 
-        @listener.change do |modified, added, removed|
+        @listener = Listen.to(Dir.pwd, options) do |modified, added, removed|
           added_and_modified = (modified + added)
 
           # See if the changed file is config.rb or lib/*.rb
@@ -134,31 +128,33 @@ module Middleman
             @webrick.stop
           else
             added_and_modified.each do |path|
-              next if app.files.ignored?(path)
-              app.files.did_change(path)
+              relative_path = Pathname(path).relative_path_from(Pathname(Dir.pwd)).to_s
+              next if app.files.ignored?(relative_path)
+              app.files.did_change(relative_path)
             end
 
             removed.each do |path|
-              next if app.files.ignored?(path)
-              app.files.did_delete(path)
+              relative_path = Pathname(path).relative_path_from(Pathname(Dir.pwd)).to_s
+              next if app.files.ignored?(relative_path)
+              app.files.did_delete(relative_path)
             end
           end
         end
 
         # Don't block this thread
-        @listener.start if first_run
+        @listener.start
       end
 
       # Trap some interupt signals and shut down smoothly
       # @return [void]
       def register_signal_handlers
         %w(INT HUP TERM QUIT).each do |sig|
-          if Signal.list[sig]
-            Signal.trap(sig) do
-              # Do as little work as possible in the signal context
-              $mm_shutdown = true
-              @webrick.stop
-            end
+          next unless Signal.list[sig]
+
+          Signal.trap(sig) do
+            # Do as little work as possible in the signal context
+            $mm_shutdown = true
+            @webrick.stop
           end
         end
       end
@@ -234,9 +230,7 @@ module Middleman
 
     class FilteredWebrickLog < ::WEBrick::Log
       def log(level, data)
-        unless data =~ %r{Could not determine content-length of response body.}
-          super(level, data)
-        end
+        super(level, data) unless data =~ %r{Could not determine content-length of response body.}
       end
     end
   end

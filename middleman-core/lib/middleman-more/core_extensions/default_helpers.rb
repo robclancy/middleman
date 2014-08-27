@@ -30,7 +30,6 @@ class Middleman::CoreExtensions::DefaultHelpers < ::Middleman::Extension
     app.helpers ::Padrino::Helpers::RenderHelpers
     app.helpers ::Padrino::Helpers::NumberHelpers
     # app.helpers ::Padrino::Helpers::TranslationHelpers
-    app.helpers ::Padrino::Helpers::Breadcrumbs
 
     app.config.define_setting :relative_links, false, 'Whether to generate relative links instead of absolute ones'
   end
@@ -73,7 +72,6 @@ class Middleman::CoreExtensions::DefaultHelpers < ::Middleman::Extension
 
     def auto_find_proper_handler(&block)
       engine = block_given? ? File.extname(block.source_location[0])[1..-1].to_sym : current_engine
-      return if engine == :slim && engine == current_engine
       handler_class = ::Padrino::Helpers::OutputHelpers.handlers[engine]
       handler_class && handler_class.new(self)
     end
@@ -118,7 +116,7 @@ class Middleman::CoreExtensions::DefaultHelpers < ::Middleman::Extension
 
       # If the basename of the request as no extension, assume we are serving a
       # directory and join index_file to the path.
-      path = File.join(asset_dir, current_path)
+      path = File.join(asset_dir, current_resource.path)
       path = path.sub(/#{Regexp.escape(File.extname(path))}$/, ".#{asset_ext}")
 
       yield path if sitemap.find_resource_by_path(path)

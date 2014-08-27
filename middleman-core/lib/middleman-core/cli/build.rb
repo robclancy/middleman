@@ -172,17 +172,17 @@ module Middleman::Cli
         path.to_s !~ /\/\./ || path.to_s =~ /\.(htaccess|htpasswd)/
       end
 
-      if RUBY_PLATFORM =~ /darwin/
-        # handle UTF-8-MAC filename on MacOS
-        @to_clean = @to_clean.map { |path| path.to_s.encode('UTF-8', 'UTF-8-MAC') }
-      end
+      return unless RUBY_PLATFORM =~ /darwin/
+
+      # handle UTF-8-MAC filename on MacOS
+      @to_clean = @to_clean.map { |path| path.to_s.encode('UTF-8', 'UTF-8-MAC') }
     end
 
     # Actually build the app
     # @return [void]
     def execute!
       # Sort order, images, fonts, js/css and finally everything else.
-      sort_order = %w(.png .jpeg .jpg .gif .bmp .svg .svgz .ico .woff .otf .ttf .eot .js .css)
+      sort_order = %w(.png .jpeg .jpg .gif .bmp .svg .svgz .ico .webp .woff .otf .ttf .eot .js .css)
 
       # Pre-request CSS to give Compass a chance to build sprites
       logger.debug '== Prerendering CSS'
@@ -284,9 +284,7 @@ module Middleman::Cli
     end
 
     def binary_encode(string)
-      if string.respond_to?(:force_encoding)
-        string.force_encoding('ascii-8bit')
-      end
+      string.force_encoding('ascii-8bit') if string.respond_to?(:force_encoding)
       string
     end
   end

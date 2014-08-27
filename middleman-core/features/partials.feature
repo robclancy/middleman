@@ -44,3 +44,14 @@ Feature: Provide Sane Defaults for Partial Behavior
     When I go to "/index.html"
     Then I should see "ERb Header"
     And I should see "Str Footer"
+
+  Scenario: Works with non-template content (svg)
+    Given the Server is running at "partials-app"
+    When I go to "/svg.html"
+    Then I should see "<svg"
+    When I go to "/static_underscore.html"
+    Then I should see "<p>Hello World</p>"
+    When I go to "/code_snippet.html"
+    Then I should see "File Not Found"
+    When I go to "/_code_snippet.html"
+    Then I should see "File Not Found"
